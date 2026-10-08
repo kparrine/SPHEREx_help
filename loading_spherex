@@ -1,0 +1,22 @@
+def get_files(path):
+    return glob.glob(path)
+
+def votable_to_astropy(votable_file):
+    #Error with the last column when reading, so need to change it 
+    with open(votable_file, "r", encoding="utf-8") as f:
+        xml_text = f.read()
+    xml_text = xml_text.replace('arraysize="54x*"', 'arraysize="*"')
+    votable = parse(io.BytesIO(xml_text.encode("utf-8"))) #parse it
+    
+    table = votable.get_first_table().to_table(use_names_over_ids=True) #make a nice table with astropy, the usenames bit is for proper column names
+
+    return table
+
+def get_data(path):
+    files = get_files(path)
+    tables = []
+    for i in files:
+        table = votable_to_astropy(i)
+        tables.append(table)
+
+    return tables

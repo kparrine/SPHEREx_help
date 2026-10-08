@@ -1,0 +1,62 @@
+FLAGS = {
+    1 << 0: "TRANSIENT",
+    1 << 1: "OVERFLOW",
+    1 << 2: "SUR_ERROR",
+    1 << 4: "PHANTOM",
+    1 << 5: "REFERENCE",
+    1 << 6: "NONFUNC",
+    1 << 7: "DICHROIC",
+    1 << 9: "MISSING_DATA",
+    1 << 10: "HOT",
+    1 << 11: "COLD",
+    1 << 12: "FULLSAMPLE",
+    1 << 13: "SUR_MISMATCH",
+    1 << 14: "PHANMISS",
+    1 << 15: "NONLINEAR",
+    1 << 16: "VAR_UNDER",
+    1 << 17: "PERSIST",
+    1 << 18: "PERSIST_UNK",
+    1 << 19: "OUTLIER",
+    1 << 20: "CROSSTALK",
+    1 << 21: "SOURCE",
+    1 << 22: "GHOST",
+    1 << 24: "GHOST_EXT",
+    1 << 26: "BLOOM",
+    1 << 27: "SNOWBALL",
+    1 << 28: "HALO",
+    1 << 29: "SATELLITE_HALO",
+    1 << 32: "CONTAINS_BAD_PIXEL",
+    1 << 33: "FIT_ERROR",
+}
+#checking flags (https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html#explorebitflags)
+def decode_flags(value):
+    return [name for bit, name in FLAGS.items() if value & bit]
+
+#Summary of pixels that can't be used for any purpose:
+#NONFUNC, DICHROIC, MISSING_DATA, HOT, COLD, FULLSAMPLE, NONLINEAR,
+
+def clean_tables(path,print_allflags=False,print_badflags=False):
+    tables = get_data(path)
+    for idx,i in enumerate(tables): #idx, full table
+        oglen = len(i)
+        bad_idx = [] #collecting the bad indices
+        
+        table_flags = tables[idx]["flags"] #this lists just the flags row from each table *****
+        print(f"\n --------Table {idx}--------- \n")
+        for idx2,j in enumerate(table_flags): #row #, value
+            if print_allflags == True:
+                print(f"{idx2}: {j} = {decode_flags(j)}")
+            
+            if j >= 4294967296: #if the bitflag is a very large number, 4294967296 or more, then that point is problematic.
+                bad_idx.append(idx2) #add the indices that satisfy above requirement to the empty array above
+                    
+        if print_badflags == True:
+            for k in bad_idx: #the bad index
+                print(f"{k}: {table_flags[k]} = {decode_flags(table_flags[k])}")
+        
+        
+        tables[idx].remove_rows(bad_idx) #cleaned table
+        
+        print(f"Table {idx} has {len(tables[idx])} rows. Removed {len(bad_idx)} rows. Original table had {oglen} rows.")
+
+    return tables
